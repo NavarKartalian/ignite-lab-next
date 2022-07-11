@@ -1,58 +1,111 @@
 import Head from "next/head";
-import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
-import { Logo } from "../components/Logo";
 import { Footer } from "../components/Footer";
+import { GetServerSideProps } from "next";
+import { gql } from "@apollo/client";
+import { client } from "../lib/apollo";
+import { getSession, useSession } from "next-auth/react";
+import { Header } from "../components/Header";
+import { ArrowRight } from "phosphor-react";
+import Link from "next/link";
 
-export default function Home() {
+interface HomeProps {
+  data: {
+    lessons: {
+      id: string;
+      lessonType: 'class' | 'live';
+      availableAt: Date;
+      title: string;
+      slug: string;
+    }[];
+  };
+}
+
+export default function Home({ data }: HomeProps) {
   const { data: session } = useSession();
-  
+  const mostRecentLesson = data.lessons.length - 1;
+
   return (
     <>
       <Head>
-        <title>Ignite Lab | Login</title>
+        <title>Ignite Lab | Home</title>
       </Head>
 
-      <div className="w-full min-h-screen bg-blur bg-cover bg-no-repeat flex flex-col items-center">
-        <div className="w-full flex items-center justify-between mt-10 lg:mt-20 mx-auto flex-col lg:flex-row lg:max-w-[1116px] lg:px-4">
-          <div className="max-w-[640px] flex flex-col items-center lg:block text-center lg:text-left">
-            <Logo />
+      <div className="min-h-screen flex flex-col">
+        <Header />
 
-            <h1 className="mt-8 text-[1.85rem] lg:text-[2.5rem] lg:leading-tight px-10 lg:px-0">
-              Construa uma <strong className="text-blue-500">aplicação completa</strong>, 
-              do zero, com <strong className="text-blue-500">React JS</strong>
-            </h1>
+        <main className="max-w-[1200px] mx-auto flex-1 mt-20 w-full px-4">
+          <div className="flex justify-between w-full bg-gray-700 rounded-lg p-8 items-center 
+          flex-col md:flex-row gap-4">
+            <div className="flex items-center gap-2 md:gap-8">
+              <div className="w-16 h-16 relative md:w-28 md:h-28">
+                <Image 
+                  src={session.user.image} 
+                  layout='fill'
+                  alt={'User profile picture'} 
+                  quality={90}
+                  priority
+                  className="rounded-full"
+                />
+              </div>
 
-            <p className="mt-4 text-gray-200 leading-relaxed text-sm lg:text-base px-10 lg:px-0">
-              Em apenas uma semana você vai dominar na prática uma das tecnologias mais 
-              utilizadas e com alta demanda para acessar as melhores oportunidades do mercado.
-            </p>
-          </div>
-
-          <div className="p-8 mt-8 bg-gray-700 border border-gray-500 rounded w-full md:w-auto lg:mt-0">
-            <strong className="text-2xl mb-6 block">
-              Inscreva-se gratuitamente
-            </strong>
-
-            <div className="flex flex-col gap-2">
-              {!session ? <button onClick={() => signIn('github')}>Github</button> : <button onClick={() => signOut()}>sign Out</button>}
+              <div className="flex flex-col">
+                <h2 className="font-bold text-xl md:text-3xl">{session.user.name}</h2>
+                <p className="text-gray-300 text-sm md:text-base">{session.user.email}</p>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="mt-4 px-4 lg:mt-10 max-w-[1248px] w-full relative">
-          <Image 
-            src="/assets/code-mockup.png" 
-            alt="code image" layout="responsive" 
-            width={1248} 
-            height={650} 
-            quality={100} 
-            priority 
-          />    
-        </div>
+            <Link href={`/event/${data.lessons[mostRecentLesson].slug}`} passHref>
+              <a 
+                className="font-bold uppercase flex items-center gap-4 p-4 rounded-lg 
+                bg-green-500 hover:bg-green-700 transition-colors w-full justify-center
+                md:w-auto md:justify-start"
+              >
+                Aula mais recente 
+                <ArrowRight />
+              </a>
+            </Link>
+          </div>
+
+          <div className="grid mt-12 lg:grid-cols-4 gap-4 md:grid-cols-2 mb-8">
+            { data.lessons.map((lesson) => (
+              <Link href={`/event/${lesson.slug}`} key={lesson.id} passHref>
+                <a className="border border-green-500 px-6 py-4 text-center rounded-lg
+                hover:bg-green-500 font-bold transition-colors">
+                  {lesson.title}
+                </a>
+              </Link>
+            ))}
+          </div>
+        </main>
 
         <Footer />
       </div>
     </>
   );
+}
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const session = await getSession(ctx);
+
+  const { data } = await client.query({
+    query: gql`
+      query GetLessons {
+        lessons(orderBy: availableAt_ASC, stage: PUBLISHED) {
+          id
+          lessonType
+          availableAt
+          title
+          slug
+        }
+      }
+    `
+  });
+
+  return {
+    props: {
+      data,
+      session
+    }
+  }
 }
