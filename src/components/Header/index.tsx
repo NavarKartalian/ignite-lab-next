@@ -1,16 +1,16 @@
 import { signOut, useSession } from "next-auth/react";
-import Image from "next/image";
 import Link from "next/link";
 import { List, SignOut, X } from "phosphor-react";
 import { Logo } from "../Logo";
 import { LogoMobile } from "../LogoMobile";
 
 interface HeaderProps {
+  eventHeader?: boolean;
   isSidebarOpen?: boolean;
   setIsSidebarOpen?: (value: boolean) => void;
 }
 
-export function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) {
+export function Header({ isSidebarOpen, setIsSidebarOpen, eventHeader }: HeaderProps) {
   const { data: session } = useSession();
 
   return (
@@ -43,7 +43,7 @@ export function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) {
           <SignOut size={24} />
         </button>
         
-        {isSidebarOpen && 
+        {eventHeader && 
           <>
             <button className={`${isSidebarOpen && 'hidden'}`} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <List size={32} className='text-blue-500' />

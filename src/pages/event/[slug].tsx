@@ -47,7 +47,7 @@ export default function Event({ data, response }: EventProps) {
       </Head>
 
       <div className="flex flex-col min-h-screen relative">
-        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} eventHeader />
         <main className="flex-1 lg:flex"> 
           {slug ? 
             <Video response={response} /> 
